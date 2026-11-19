@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}</style>
+</head>
+<body>
+<title>Astrid Letterhead Generator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Layout: editor column on the left, live A4 pages on the right; stacks on phones. */
+:root {
+  --brand: #3d93d1;
+  --brand-deep: #1f5f8f;
+  --ink: #111827;
+  --bg: #f3f6f9;
+  --panel: #ffffff;
+  --fg: #111827;
+  --muted: #5b6676;
+  --line: #dde4ec;
+  --field: #ffffff;
+  --desk: #e6ecf2;
+  --focus: rgba(61,147,209,.35);
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1218; --panel: #141b23; --fg: #e8edf3; --muted: #93a0b0;
+    --line: #26313d; --field: #0f151c; --desk: #0a0f14; --brand: #5aa9e0;
+    --focus: rgba(90,169,224,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1218; --panel: #141b23; --fg: #e8edf3; --muted: #93a0b0;
+  --line: #26313d; --field: #0f151c; --desk: #0a0f14; --brand: #5aa9e0;
+  --focus: rgba(90,169,224,.4); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1400px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.brandline { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.dot { width: 38px; height: 38px; border-radius: 50%; background: #3d93d1; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 17px; flex: none; }
+h1 { font-size: 18px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button, .filebtn { font: inherit; font-size: 13px; font-weight: 500; border-radius: 999px; padding: 9px 16px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg); transition: background .2s, border-color .2s; }
+button:hover, .filebtn:hover { border-color: var(--brand); }
+button.primary { background: #3d93d1; border-color: #3d93d1; color: #fff; }
+button.primary:hover { background: #1f5f8f; border-color: #1f5f8f; }
+button:focus-visible, .filebtn:focus-within, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+button:disabled { opacity: .6; cursor: progress; }
+.grid { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.editor { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+@media (min-width: 921px) { .editor { position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); max-height: calc(100vh - 24px); overflow: auto; } }
+fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+legend { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 8px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label { display: block; font-size: 12.5px; font-weight: 500; min-width: 0; }
+label > input[type=text], label > textarea { display: block; margin-top: 4px; }
+.row { align-items: end; }
+label .hint { font-weight: 400; color: var(--muted); }
+input[type=text], textarea { font: inherit; font-size: 14px; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+textarea { resize: vertical; line-height: 1.5; }
+#f-body { min-height: 260px; }
+.check { display: flex; flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 2px 0; width: 100%; }
+.logo-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.logo-thumb { height: 44px; min-width: 120px; max-width: 200px; border: 1px dashed var(--line); border-radius: 8px; background: #fff; display: grid; place-items: center; padding: 4px 8px; overflow: hidden; }
+.logo-thumb img { max-height: 34px; }
+.logo-thumb span { color: #5b6676; font-size: 11px; }
+.filebtn { display: inline-flex; align-items: center; }
+.filebtn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.status { font-size: 12.5px; color: var(--muted); min-height: 1.2em; }
+.status.ok { color: #1d8a4e; }
+.status.err { color: #c2410c; }
+.preview { display: flex; flex-direction: column; gap: 18px; align-items: center; background: var(--desk); border-radius: 14px; padding: 22px 14px; min-width: 0; }
+.pagecount { font-size: 12px; color: var(--muted); align-self: stretch; text-align: center; }
+.page { width: 100%; max-width: 794px; aspect-ratio: 210 / 297; background: #fff; box-shadow: 0 1px 2px rgba(13,36,56,.08), 0 10px 30px rgba(13,36,56,.12); }
+.page svg { width: 100%; height: 100%; display: block; }
+.tips { font-size: 12.5px; color: var(--muted); margin: 0; padding-left: 18px; }
+.tips code { font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+@media (max-width: 460px) { .row { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brandline">
+      <div class="dot" aria-hidden="true">A</div>
+      <div>
+        <h1>Astrid Letterhead Generator</h1>
+        <p class="sub">Paste your message, check the preview, download a branded A4 PDF.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" id="btn-sample">Load sample letter</button>
+      <button type="button" id="btn-clear">New blank letter</button>
+      <button type="button" class="primary" id="btn-pdf">Download PDF</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <form class="editor" id="form" autocomplete="off">
+      <fieldset>
+        <legend>Letter details</legend>
+        <div class="row">
+          <label for="f-ref">Our reference <span class="hint">optional</span><input type="text" id="f-ref"></label>
+          <label for="f-date">Date<input type="text" id="f-date"></label>
+        </div>
+        <label for="f-to">Recipient <span class="hint">name, title, organisation, address: one per line</span>
+          <textarea id="f-to" rows="4"></textarea></label>
+        <label for="f-subject">Subject <span class="hint">optional, printed in bold</span><input type="text" id="f-subject"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Message</legend>
+        <label for="f-body">Paste your message here
+          <textarea id="f-body" rows="14" placeholder="Dear Sir/Madam,&#10;&#10;Paste or type your message…"></textarea></label>
+        <ul class="tips">
+          <li>A blank line starts a new paragraph.</li>
+          <li>Start a line with <code>-</code> or <code>•</code> for a bullet point.</li>
+          <li>Long letters flow onto extra pages automatically.</li>
+        </ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sign-off</legend>
+        <label class="check" for="f-sign"><input type="checkbox" id="f-sign" checked> Add a signature block</label>
+        <label for="f-closing">Closing<input type="text" id="f-closing"></label>
+        <div class="row">
+          <label for="f-name">Signatory name<input type="text" id="f-name"></label>
+          <label for="f-title">Position<input type="text" id="f-title"></label>
+        </div>
+      </fieldset>
+
+      <hr class="sep">
+
+      <fieldset>
+        <legend>Logo</legend>
+        <div class="logo-box">
+          <div class="logo-thumb" id="logo-thumb"><span>Built-in Astrid mark</span></div>
+          <label class="filebtn" for="f-logo">Upload logo<input type="file" id="f-logo" accept="image/png,image/jpeg,image/svg+xml,image/webp"></label>
+          <button type="button" id="btn-logo-reset">Use built-in mark</button>
+        </div>
+        <p class="status" id="logo-status">Upload the official Astrid logo (PNG works best). It is remembered in this browser.</p>
+      </fieldset>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </form>
+
+    <section class="preview" aria-label="Letter preview">
+      <div class="pagecount" id="pagecount"></div>
+      <div id="pages" style="display:contents"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Company details (from astridtechnology.site) ---------- */
+  var CO = {
+    name: "ASTRID TECHNOLOGY LIMITED",
+    address: "Plot 156 Namugongo–Bulindo Road, Kampala, Uganda",
+    phones: "+256 763 399 917   ·   +256 748 966 658",
+    web: "ask@astridtechnology.site   ·   astridtechnology.site",
+    tagline: "Software for faith, health, education & commerce",
+    site: "astridtechnology.site"
+  };
+  var C = { blue: "#3d93d1", ink: "#111827", grey: "#5b6676", rule: "#d4dbe3", white: "#ffffff" };
+  var LIVE_LOGO = "https://astridtechnology.site/brand/at-logo.png";
+
+  /* ---------- Page geometry (mm) ---------- */
+  var W = 210, H = 297, M = 22, CW = W - 2 * M, TOP = 46, BOTTOM = 272;
+  var PT = 0.352778; // mm per point
+  var BODY_PT = 10.5, LH = BODY_PT * PT * 1.5;
+
+  var jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+  var measure = jsPDFCtor ? new jsPDFCtor({ unit: "mm", format: "a4" }) : null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var FIELDS = ["f-ref", "f-date", "f-to", "f-subject", "f-body", "f-closing", "f-name", "f-title"];
+  var logo = null; // {src, w, h}
+
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function today() {
+    var d = new Date();
+    var m = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    return d.getDate() + " " + m[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  var SAMPLE = {
+    "f-ref": "ATL/EDU/2026/014",
+    "f-date": today(),
+    "f-to": "The Head Teacher\nYour School Name\nP.O. Box 0000\nKampala",
+    "f-subject": "Introducing Astrid School Management Software",
+    "f-body": "Dear Sir/Madam,\n\nAstrid Technology Limited designs and ships software for faith, health, education and commerce. We are writing to introduce our School Management Software, a single platform built for modern schools in Uganda.\n\nThe platform brings your daily administration into one place:\n- Admissions, attendance and timetables\n- Grading, report cards and fees collection\n- Parent communication by SMS and app notifications\n\nOur team is based in Namugongo, Kampala, and supports schools directly, from setup and data migration to staff training. We would be glad to arrange a free demonstration at your school at a time that suits you.\n\nThank you for your time. We look forward to working with you.",
+    "f-closing": "Yours faithfully,",
+    "f-name": "Your Name",
+    "f-title": "Managing Director"
+  };
+
+  /* ---------- Text cleanup: keep characters the PDF fonts can print ---------- */
+  var WINANSI_EXTRA = "€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ";
+  function clean(s) {
+    s = (s || "").replace(/\r\n?/g, "\n").replace(/\t/g, "    ").replace(/[‐‑‒]/g, "-").replace(/−/g, "-")
+      .replace(/[′]/g, "'").replace(/[″]/g, '"').replace(/ /g, " ");
+    var out = "";
+    for (var i = 0; i < s.length; i++) {
+      var ch = s[i], code = s.charCodeAt(i);
+      if (code === 10 || (code >= 32 && code <= 126) || (code >= 160 && code <= 255) || WINANSI_EXTRA.indexOf(ch) >= 0) out += ch;
+      else if (code >= 0xD800 && code <= 0xDBFF) i++; // drop emoji pairs
+    }
+    return out;
+  }
+
+  function wrap(text, width, pt, bold) {
+    if (!measure) return [text];
+    measure.setFont("helvetica", bold ? "bold" : "normal");
+    measure.setFontSize(pt);
+    return measure.splitTextToSize(text, width);
+  }
+
+  /* ---------- Layout: produce draw operations per page ---------- */
+  function headerOps(ops) {
+    ops.push({ t: "rect", x: 0, y: 0, w: W, h: 3.2, c: C.blue });
+    ops.push({ t: "rect", x: 0, y: 0, w: M + 26, h: 3.2, c: C.ink });
+    if (logo) {
+      var lh = 13, lw = Math.min(70, lh * logo.w / logo.h);
+      lh = lw * logo.h / logo.w;
+      ops.push({ t: "img", src: logo.src, x: M, y: 18.5 - lh / 2, w: lw, h: lh });
+    } else {
+      ops.push({ t: "circle", x: M + 6.2, y: 18.2, r: 6.2, c: C.blue });
+      ops.push({ t: "text", s: "A", x: M + 6.2, y: 21.1, pt: 15, bold: true, c: C.white, align: "center" });
+      ops.push({ t: "text", s: "Astrid", x: M + 15.6, y: 18.9, pt: 19, bold: true, c: C.ink });
+      ops.push({ t: "text", s: "TECHNOLOGY LIMITED", x: M + 15.9, y: 23.4, pt: 6.6, bold: true, c: C.blue });
+    }
+    var R = W - M;
+    ops.push({ t: "text", s: CO.name, x: R, y: 14.2, pt: 8.6, bold: true, c: C.ink, align: "right" });
+    ops.push({ t: "text", s: CO.address, x: R, y: 18.6, pt: 7.6, c: C.grey, align: "right" });
+    ops.push({ t: "text", s: CO.phones, x: R, y: 22.2, pt: 7.6, c: C.grey, align: "right" });
+    ops.push({ t: "text", s: CO.web, x: R, y: 25.8, pt: 7.6, c: C.grey, align: "right" });
+    ops.push({ t: "line", x1: M, y1: 33, x2: R, y2: 33, c: C.rule, lw: 0.25 });
+    ops.push({ t: "rect", x: M, y: 32.55, w: 26, h: 0.9, c: C.blue });
+  }
+
+  function footerOps(ops, n, total) {
+    var R = W - M;
+    ops.push({ t: "line", x1: M, y1: 279.5, x2: R, y2: 279.5, c: C.rule, lw: 0.25 });
+    ops.push({ t: "text", s: CO.tagline, x: M, y: 284.6, pt: 7.4, c: C.grey });
+    var right = total > 1 ? CO.site + "   ·   Page " + n + " of " + total : CO.site;
+    ops.push({ t: "text", s: right, x: R, y: 284.6, pt: 7.4, bold: true, c: C.blue, align: "right" });
+    ops.push({ t: "rect", x: 0, y: H - 3.2, w: W, h: 3.2, c: C.blue });
+    ops.push({ t: "rect", x: W - M - 26, y: H - 3.2, w: M + 26, h: 3.2, c: C.ink });
+  }
+
+  function layout(d) {
+    var pages = [[]], y = TOP;
+    var cur = function () { return pages[pages.length - 1]; };
+    function newPage() { pages.push([]); y = TOP; }
+    function ensure(h) { if (y + h > BOTTOM) newPage(); }
+    function line(s, x, pt, opts) {
+      opts = opts || {};
+      var lh = pt * PT * 1.5;
+      ensure(lh);
+      cur().push({ t: "text", s: s, x: x, y: y + pt * PT * 0.8, pt: pt, bold: !!opts.bold, c: opts.c || C.ink, align: opts.align });
+      y += lh;
+    }
+
+    // Reference and date
+    if (d.ref || d.date) {
+      if (d.ref) cur().push({ t: "text", s: "Our ref: " + d.ref, x: M, y: y + 3, pt: 9, c: C.grey });
+      if (d.date) cur().push({ t: "text", s: d.date, x: W - M, y: y + 3, pt: 9.5, c: C.ink, align: "right" });
+      y += 11;
+    }
+
+    // Recipient
+    if (d.to.trim()) {
+      d.to.split("\n").forEach(function (l, i) {
+        wrap(l, CW * 0.6, BODY_PT, i === 0).forEach(function (w) { line(w, M, BODY_PT, { bold: i === 0 }); });
+      });
+      y += 6;
+    }
+
+    // Subject
+    if (d.subject.trim()) {
+      var subj = wrap(d.subject.trim().toUpperCase(), CW, 10.5, true);
+      ensure(subj.length * LH + LH * 2);
+      subj.forEach(function (w) { line(w, M, 10.5, { bold: true }); });
+      cur().push({ t: "rect", x: M, y: y + 0.6, w: 12, h: 0.7, c: C.blue });
+      y += 5.5;
+    }
+
+    // Body paragraphs
+    var paras = d.body.split(/\n\s*\n/);
+    paras.forEach(function (p, pi) {
+      if (!p.trim()) return;
+      p.split("\n").forEach(function (raw) {
+        var m = raw.match(/^\s*([-•*])\s+(.*)$/);
+        if (m) {
+          var bl = wrap(m[2], CW - 7, BODY_PT, false);
+          bl.forEach(function (w, i) {
+            ensure(LH);
+            if (i === 0) cur().push({ t: "text", s: "•", x: M + 2, y: y + BODY_PT * PT * 0.8, pt: BODY_PT, c: C.blue, bold: true });
+            line(w, M + 7, BODY_PT);
+          });
+        } else {
+          wrap(raw.replace(/\s+$/, ""), CW, BODY_PT, false).forEach(function (w) { line(w, M, BODY_PT); });
+        }
+      });
+      if (pi < paras.length - 1) y += 3.4;
+    });
+
+    // Signature block, kept together
+    if (d.sign) {
+      var blockH = 6 + LH + 16 + LH * 2;
+      if (y + blockH > BOTTOM) newPage(); else y += 6;
+      if (d.closing) line(d.closing, M, BODY_PT);
+      y += 16;
+      cur().push({ t: "line", x1: M, y1: y - 1.5, x2: M + 55, y2: y - 1.5, c: C.rule, lw: 0.3 });
+      if (d.name) line(d.name, M, BODY_PT, { bold: true });
+      if (d.title) line(d.title, M, 9.5, { c: C.grey });
+      line("For: Astrid Technology Limited", M, 9.5, { c: C.grey });
+    }
+
+    var total = pages.length;
+    return pages.map(function (ops, i) {
+      var all = [];
+      headerOps(all);
+      footerOps(all, i + 1, total);
+      return all.concat(ops);
+    });
+  }
+
+  /* ---------- Backends ---------- */
+  var NS = "http://www.w3.org/2000/svg";
+  function svgPage(ops) {
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("role", "img");
+    ops.forEach(function (o) {
+      var el;
+      if (o.t === "rect") { el = document.createElementNS(NS, "rect"); el.setAttribute("x", o.x); el.setAttribute("y", o.y); el.setAttribute("width", o.w); el.setAttribute("height", o.h); el.setAttribute("fill", o.c); }
+      else if (o.t === "circle") { el = document.createElementNS(NS, "circle"); el.setAttribute("cx", o.x); el.setAttribute("cy", o.y); el.setAttribute("r", o.r); el.setAttribute("fill", o.c); }
+      else if (o.t === "line") { el = document.createElementNS(NS, "line"); el.setAttribute("x1", o.x1); el.setAttribute("y1", o.y1); el.setAttribute("x2", o.x2); el.setAttribute("y2", o.y2); el.setAttribute("stroke", o.c); el.setAttribute("stroke-width", o.lw); }
+      else if (o.t === "img") { el = document.createElementNS(NS, "image"); el.setAttribute("href", o.src); el.setAttribute("x", o.x); el.setAttribute("y", o.y); el.setAttribute("width", o.w); el.setAttribute("height", o.h); }
+      else if (o.t === "text") {
+        el = document.createElementNS(NS, "text");
+        el.setAttribute("x", o.x); el.setAttribute("y", o.y);
+        el.setAttribute("font-family", "Helvetica, Arial, sans-serif");
+        el.setAttribute("font-size", (o.pt * PT).toFixed(3));
+        el.setAttribute("fill", o.c);
+        if (o.bold) el.setAttribute("font-weight", "700");
+        el.setAttribute("text-anchor", o.align === "right" ? "end" : o.align === "center" ? "middle" : "start");
+        el.setAttribute("xml:space", "preserve");
+        el.textContent = o.s;
+      }
+      if (el) svg.appendChild(el);
+    });
+    return svg;
+  }
+
+  function buildPdf(pages) {
+    var doc = new jsPDFCtor({ unit: "mm", format: "a4", compress: true });
+    doc.setProperties({ title: "Astrid Technology Limited letter", author: "Astrid Technology Limited", creator: "Astrid Letterhead Generator" });
+    pages.forEach(function (ops, i) {
+      if (i > 0) doc.addPage();
+      ops.forEach(function (o) {
+        if (o.t === "rect") { doc.setFillColor(o.c); doc.rect(o.x, o.y, o.w, o.h, "F"); }
+        else if (o.t === "circle") { doc.setFillColor(o.c); doc.circle(o.x, o.y, o.r, "F"); }
+        else if (o.t === "line") { doc.setDrawColor(o.c); doc.setLineWidth(o.lw); doc.line(o.x1, o.y1, o.x2, o.y2); }
+        else if (o.t === "img") { doc.addImage(o.src, "PNG", o.x, o.y, o.w, o.h, undefined, "FAST"); }
+        else if (o.t === "text") {
+          doc.setFont("helvetica", o.bold ? "bold" : "normal");
+          doc.setFontSize(o.pt); doc.setTextColor(o.c);
+          doc.text(o.s, o.x, o.y, o.align ? { align: o.align } : undefined);
+        }
+      });
+    });
+    return doc;
+  }
+
+  /* ---------- State ---------- */
+  function readForm() {
+    var g = function (id) { return clean($(id).value); };
+    return { ref: g("f-ref").trim(), date: g("f-date").trim(), to: g("f-to"), subject: g("f-subject"), body: g("f-body"),
+      closing: g("f-closing").trim(), name: g("f-name").trim(), title: g("f-title").trim(), sign: $("f-sign").checked };
+  }
+  function fill(data) { FIELDS.forEach(function (id) { $(id).value = data[id] || ""; }); }
+  function saveDraft() {
+    var d = {}; FIELDS.forEach(function (id) { d[id] = $(id).value; }); d.sign = $("f-sign").checked;
+    store("astrid-letter-draft", JSON.stringify(d));
+  }
+
+  var timer = null;
+  function render() {
+    var pagesEl = $("pages");
+    if (!measure) { $("status").textContent = "The PDF engine did not load. Check your connection and reload the page."; $("status").className = "status err"; return; }
+    var pages = layout(readForm());
+    pagesEl.innerHTML = "";
+    pages.forEach(function (ops, i) {
+      var wrapEl = document.createElement("div");
+      wrapEl.className = "page";
+      wrapEl.setAttribute("aria-label", "Page " + (i + 1));
+      wrapEl.appendChild(svgPage(ops));
+      pagesEl.appendChild(wrapEl);
+    });
+    $("pagecount").textContent = pages.length === 1 ? "1 page · A4" : pages.length + " pages · A4";
+  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(function () { render(); saveDraft(); }, 120); }
+
+  /* ---------- Logo handling ---------- */
+  function setLogo(l, persist) {
+    logo = l;
+    var t = $("logo-thumb");
+    t.innerHTML = "";
+    if (l) { var im = new Image(); im.src = l.src; im.alt = "Uploaded logo"; t.appendChild(im); }
+    else { var sp = document.createElement("span"); sp.textContent = "Built-in Astrid mark"; t.appendChild(sp); }
+    if (persist) store("astrid-letter-logo", l ? JSON.stringify(l) : null);
+    render();
+  }
+  function imageToLogo(img) {
+    var scale = Math.min(1, 1600 / img.naturalWidth);
+    var cv = document.createElement("canvas");
+    cv.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    cv.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+    return { src: cv.toDataURL("image/png"), w: cv.width, h: cv.height };
+  }
+  $("f-logo").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        try { setLogo(imageToLogo(img), true); $("logo-status").textContent = "Logo saved in this browser."; $("logo-status").className = "status ok"; }
+        catch (err) { $("logo-status").textContent = "That image could not be read. Try a PNG or JPG file."; $("logo-status").className = "status err"; }
+      };
+      img.onerror = function () { $("logo-status").textContent = "That file is not an image this browser can open. Try a PNG or JPG."; $("logo-status").className = "status err"; };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+    e.target.value = "";
+  });
+  $("btn-logo-reset").addEventListener("click", function () {
+    setLogo(null, true);
+    $("logo-status").textContent = "Using the built-in Astrid mark."; $("logo-status").className = "status";
+  });
+  function tryLiveLogo() {
+    // Works when this file is opened directly in a browser; artifact viewers block outside images.
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function () { try { if (!logo) setLogo(imageToLogo(img), false); } catch (e) {} };
+    img.src = LIVE_LOGO;
+  }
+
+  /* ---------- PDF download ---------- */
+  function slug(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
+  $("btn-pdf").addEventListener("click", async function () {
+    var btn = this, st = $("status");
+    if (!measure) return;
+    var d = readForm();
+    var doc = buildPdf(layout(d));
+    var name = "Astrid-Letter" + (d.subject ? "-" + slug(d.subject) : "") + (d.date ? "-" + slug(d.date) : "") + ".pdf";
+    btn.disabled = true; st.className = "status"; st.textContent = "Preparing PDF…";
+    try {
+      var dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+      if (dl) {
+        await dl.save({ filename: name, data: doc.output("blob") });
+        st.textContent = "Saved " + name; st.className = "status ok";
+      } else {
+        doc.save(name);
+        st.textContent = "Downloaded " + name; st.className = "status ok";
+      }
+    } catch (err) {
+      var code = err && err.code;
+      if (code === "declined") { st.textContent = "Download cancelled."; }
+      else if (code === "rate_limited") { st.textContent = "A save prompt is already open. Finish it, then try again."; }
+      else {
+        try { doc.save(name); st.textContent = "Downloaded " + name; st.className = "status ok"; }
+        catch (e2) { st.textContent = "This view cannot save files. Open the generator in a browser tab and try again."; st.className = "status err"; }
+      }
+    } finally { btn.disabled = false; }
+  });
+
+  /* ---------- Wire up ---------- */
+  $("btn-sample").addEventListener("click", function () { fill(SAMPLE); $("f-sign").checked = true; render(); saveDraft(); });
+  $("btn-clear").addEventListener("click", function () {
+    fill({ "f-date": today(), "f-closing": "Yours faithfully,", "f-name": $("f-name").value, "f-title": $("f-title").value });
+    render(); saveDraft(); $("f-body").focus();
+  });
+  FIELDS.forEach(function (id) { $(id).addEventListener("input", schedule); });
+  $("f-sign").addEventListener("change", schedule);
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); });
+
+  var draft = null;
+  try { draft = JSON.parse(load("astrid-letter-draft") || "null"); } catch (e) {}
+  if (draft) { fill(draft); $("f-sign").checked = draft.sign !== false; } else fill(SAMPLE);
+  var savedLogo = null;
+  try { savedLogo = JSON.parse(load("astrid-letter-logo") || "null"); } catch (e) {}
+  if (savedLogo && savedLogo.src) setLogo(savedLogo, false); else { render(); tryLiveLogo(); }
+})();
+</script>
+
+</body>
+</html>
